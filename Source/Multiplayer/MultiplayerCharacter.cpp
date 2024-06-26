@@ -71,6 +71,37 @@ void AMultiplayerCharacter::GetLifetimeReplicatedProps(TArray <FLifetimeProperty
 	DOREPLIFETIME(AMultiplayerCharacter, CurrentHealth);
 }
 
+void AMultiplayerCharacter::OnHealthUpdate()
+{
+	// Client-specific functionality
+	if (IsLocallyControlled())
+	{
+		FString healthMessage = FString::Printf(TEXT("You now have %f health remaining."), CurrentHealth);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
+
+		if (CurrentHealth <= 0)
+		{
+			FString deathMessage = FString::Printf(TEXT("You have been killed."));
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, deathMessage);
+		}
+	}
+
+	//Server-specific functionality
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		FString healthMessage = FString::Printf(TEXT("%s now has %f health remaining."), *GetFName().ToString(), CurrentHealth);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
+	}
+
+	//Functions that occur on all machines
+	// Any special functionality that should happen as a result of damage or death should happen here.
+}
+
+void AMultiplayerCharacter::OnRep_CurrentHealth()
+{
+	OnHealthUpdate();
+}
+
 void AMultiplayerCharacter::BeginPlay()
 {
 	// Call the base class  
